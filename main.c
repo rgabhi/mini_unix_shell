@@ -106,47 +106,90 @@ int launch(char **args) {
 
 
 
+// commit 1
+char **tokenize(char *line){
+   int bufsize = TOKEN_BUFF_SZ;
+   int position = 0;
+   // allocate buffer
+   char **tokens = malloc(bufsize * sizeof(char*));
+   char *p = line;
 
 
-char **tokenize_input(char *line){
-    int bufsize = TOKEN_BUFF_SZ;
-    int position = 0;
-    // allocate buffer
-    char **tokens = malloc(bufsize * sizeof(char*));
-    char *token;
-    
-    if(!tokens){
-        // write to file stream
-        fprintf(stderr, "apsh : allocation error\n");
-        exit(EXIT_FAILURE);
-    }
+  
+   if(!tokens){
+       // write to file stream
+       fprintf(stderr, "lsh : allocation error\n");
+       exit(EXIT_FAILURE);
+   }
 
-    //2. get first token
-    token = strtok(line, TOKEN_DELIMS);
-    while(token != NULL){
-        tokens[position] = token;
-        position++;
 
-        // if exceed buffer size, realloc
-        if(position >= bufsize){
-            bufsize += TOKEN_BUFF_SZ;
-            tokens = realloc(tokens, bufsize * sizeof(char*));
-            if(!tokens){
-                fprintf(stderr, "apsh: allocation error\n");
-                exit(EXIT_FAILURE);
-            }
-        }
+   //2. get first token
+   while(*p != NULL){
 
-        // 3. get next token- pass null
-        token = strtok(NULL, TOKEN_DELIMS);
 
-    }
+       // 1. skip leading white space
+       while(*p == ' ' || *p == '\t' || *p == '\n')p++;
+      
+       if(*p == '\0')break; // end of line
 
-    // 4. NULL terminate arr
-    tokens[position] = NULL;
-    return tokens;
+
+       // handle quoted strings
+       if(*p == '"'){
+           p++; // skip opening quote
+           tokens[position] = p;
+           position++;
+          
+           // scan closing quote
+           while(*p && *p != '"'){
+               p++;
+           }
+
+
+           if(*p == '"'){
+               *p = '\0'; //terminate token
+               p++;
+           }
+       }
+       else{
+           // handle normal words
+           tokens[position] = p;
+           position++;
+
+
+           // search next whitespace
+           while(*p && *p != ' ' && *p != '\t' && *p != '\n'){
+               p++;
+           }
+           // if space terminate token
+           if(*p != NULL){
+               *p = '\0';
+               p++;
+           }
+       }
+
+
+       // 4. if exceed buffer size, realloc
+       if(position >= bufsize){
+           bufsize += TOKEN_BUFF_SZ;
+           tokens = realloc(tokens, bufsize * sizeof(char*));
+           if(!tokens){
+               fprintf(stderr, "lsh: allocation error\n");
+               exit(EXIT_FAILURE);
+           }
+       }
+
+
+   }
+
+
+   // 4. NULL terminate arr
+   tokens[position] = NULL;
+   return tokens;
+
 
 }
+
+
 
 
 int execute(char **args){
