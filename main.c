@@ -178,30 +178,34 @@ char **tokenize_input(char *line){
 
 
 
-int execute(char **args){
-   if(args[0] == NULL){
-       // empty command
-       return 1;
-   }
-   // check pipeline |
-   for(int i = 0; args[i] != NULL; i++){
-       if(strcmp(args[i], "|") == 0){
-           args[i] = NULL; // split
-           execute_pipeline(args, &args[i + 1]);
-           return 1;
-       }
-   }
+int execute(char **args, LRUCache *cache){
+    if(args[0] == NULL){
+        // empty command
+        return 1;
+    }
+    // check pipeline |
+    for(int i = 0; args[i] != NULL; i++){
+        if(strcmp(args[i], "|") == 0){
+            args[i] = NULL; // split
+            execute_pipeline(args, &args[i + 1]);
+            return 1;
+        }
+    }
 
 
-   if(strcmp(args[0], "cd") == 0){
-       return apsh_cd(args);
-   }
-   if(strcmp(args[0], "exit") == 0){
-       return apsh_exit(args);
-   }
-   if(strcmp(args[0], "export") == 0){
-       return apsh_export(args);
-   }
+    if(strcmp(args[0], "cd") == 0){
+        return apsh_cd(args);
+    }
+    if(strcmp(args[0], "exit") == 0){
+        return apsh_exit(args);
+    }
+    if(strcmp(args[0], "export") == 0){
+        return apsh_export(args);
+    }
+    if (strcmp(args[0], "history") == 0){
+        return lru_print(cache);
+    }
+
    // if not a built-in, run as external process
    return launch(args);
 }
@@ -217,6 +221,8 @@ int main(){
     ssize_t read;
     char **args;
     int status = 1;
+    LRUCache *lru_cache = lru_create(20);
+    
 
     signal(SIGINT, handle_sigint);
     signal(SIGCHLD, handle_sigchld); // Handle Zombies (Background processes)
@@ -258,15 +264,18 @@ int main(){
                 continue;
             }
         }
-
+        
+        // 2.a add to history
+        lru_put(lru_cache, line);
 
         // 3. get args
         args = tokenize_input(line);
         if(args[0] != NULL){
-            status = execute(args);
+            status = execute(args, lru_cache);
         }
         free(args);
     }
+    lru_free(lru_cache);
     free(line);
     return 0;
 }
