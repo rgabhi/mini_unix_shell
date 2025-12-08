@@ -5,12 +5,15 @@
 #include <unistd.h>  // fork, execvp
 #include <sys/wait.h> //waitpid
 #include<fcntl.h>   // for open(),O_CREAT ,etc.....
+#include<signal.h> // for signal, SIGINT
+
+#include "apsh_module.h"
 
 #define TOKEN_BUFF_SZ 64
 #define TOKEN_DELIMS " \t\r\n\a"
 
 
-// commit2
+// LAUNCH METHOD
 int launch(char **args) {
    pid_t pid;
    int status;
@@ -33,7 +36,6 @@ int launch(char **args) {
    if (pid == 0) {
        // --- CHILD PROCESS ---
       
-       // commit 7
        // check for redirection
        for (int j = 0; args[j] != NULL; j++) {
            if (strcmp(args[j], ">") == 0) {
@@ -71,16 +73,15 @@ int launch(char **args) {
                close(fd);
            }
        }
-       // end commit 7
 
 
        if (execvp(args[0], args) == -1) {
-           perror("lsh");
+           perror("apsh");
        }
        exit(EXIT_FAILURE);
       
    } else if (pid < 0) {
-       perror("lsh");
+       perror("apsh");
    } else {
        // --- PARENT PROCESS ---
       
@@ -104,9 +105,6 @@ int launch(char **args) {
 
 
 
-
-
-// commit 1
 char **tokenize_input(char *line){
    int bufsize = TOKEN_BUFF_SZ;
    int position = 0;
@@ -118,13 +116,13 @@ char **tokenize_input(char *line){
   
    if(!tokens){
        // write to file stream
-       fprintf(stderr, "lsh : allocation error\n");
+       fprintf(stderr, "apsh : allocation error\n");
        exit(EXIT_FAILURE);
    }
 
 
    //2. get first token
-   while(*p != NULL){
+   while(*p){
 
 
        // 1. skip leading white space
@@ -161,7 +159,7 @@ char **tokenize_input(char *line){
                p++;
            }
            // if space terminate token
-           if(*p != NULL){
+           if(*p){
                *p = '\0';
                p++;
            }
@@ -173,7 +171,7 @@ char **tokenize_input(char *line){
            bufsize += TOKEN_BUFF_SZ;
            tokens = realloc(tokens, bufsize * sizeof(char*));
            if(!tokens){
-               fprintf(stderr, "lsh: allocation error\n");
+               fprintf(stderr, "apsh: allocation error\n");
                exit(EXIT_FAILURE);
            }
        }
@@ -218,6 +216,7 @@ int execute(char **args){
 }
 
 
+
 int main(){
     // ptr to line buffer 
     char *line = NULL;
@@ -228,13 +227,45 @@ int main(){
     char **args;
     int status = 1;
 
+    signal(SIGINT, handle_sigint);
+    signal(SIGCHLD, handle_sigchld); // Handle Zombies (Background processes)
+
+    printf(
+    "\033[1;31m"  // Red skull
+    "      .----.   @   @\n"
+    "     / .-\"-.`.  \\v/\n"
+    "     | | '\\ \\ \\_/ )\n"
+    "   ,-' \\ `-.' /  /\n"
+    "  '---`----'----'\n"
+    "\033[0m"
+    "\n\033[1;32m        AP_SHELL\033[0m\n\n"  // Green AP_SHELL centered
+    );
+
+
     while(status){
         // 1.
-        printf("||AP_SHELL||>>> ");
+        // printf("||AP_SHELL||>> ");
+        char cwd[1024];
+        getcwd(cwd, sizeof(cwd));
+        printf("\033[1;34m%s\033[0m \033[1;32mAP_SHELL\033[0m\033[1;36m >> \033[0m", cwd);
 
         // 2. read line from stdin
         read = getline(&line, &len, stdin);
         
+        // handle Ctrl-D - exit
+        if(read == -1){
+            if (feof(stdin)){
+                printf("\n");
+                break;
+            }
+            else{
+                // handle Ctrl-C
+                clearerr(stdin);
+                continue;
+            }
+        }
+
+
         // 3. get args
         args = tokenize_input(line);
         if(args[0] != NULL){

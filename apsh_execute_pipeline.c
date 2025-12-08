@@ -3,7 +3,7 @@
 #include <unistd.h>  // fork, execvp
 #include <sys/wait.h> //waitpid
 
-
+#include "apsh_module.h"
 
 void execute_pipeline(char **left_args, char **right_args){
     int pfd[2];
