@@ -10,6 +10,75 @@
 #include <sys/types.h>  // pid_t
 #include <sys/wait.h>   // waitpid, W macros
 #include<signal.h>
+#include <fcntl.h>
+
+
+#define LSH_HIST_MAX 100   // max number of commands to remember
+
+char *history[LSH_HIST_MAX];
+int history_count = 0;
+
+//unsafe to use 
+
+
+// void *memcpy(void *dest, const void *src, size_t n)
+// {
+//     unsigned char *d = dest;
+//     const unsigned char *s = src;
+
+//     // Copy forward from src to dest
+//     for (size_t i = 0; i < n; i++) {
+//         d[i] = s[i];
+//     }
+
+//     return dest;
+// }
+
+
+//safe to use if d>s so it copy backward not possible in memcpy
+//memcpy only have forward copying
+
+// void *memmove(void *dest, const void *src, size_t n)
+// {
+//     unsigned char *d = dest;
+//     const unsigned char *s = src;
+
+//     if (d < s) {
+//         // Copy forward
+//         for (size_t i = 0; i < n; i++) {
+//             d[i] = s[i];
+//         }
+//     } else {
+//         // Copy backward
+//         for (size_t i = n; i > 0; i--) {
+//             d[i-1] = s[i-1];
+//         }
+//     }
+
+//     return dest;
+// }
+
+
+void add_history(const char *line) {
+    // ignore empty lines
+    if (line == NULL || line[0] == '\0')
+        return;
+
+    // if buffer full, remove oldest entry
+    if (history_count == LSH_HIST_MAX) {
+        free(history[0]);
+        // shift all entries left by 1
+        memmove(history, history + 1, sizeof(char*) * (LSH_HIST_MAX - 1));
+        history_count--;
+    }
+
+    //strdup(line) allocates new memory and copies the string into it.
+    //the original line will be freed in lsh_loop();
+    // history must keep its own independent copy
+
+    history[history_count] = strdup(line);  // make a copy
+    history_count++;
+}
 
 
 
@@ -18,8 +87,8 @@ char *builtin_str[] = {
     "cd",
     "help",
     "exit",
-    "history",
-    "export"
+    "history"
+    
 };
 
 
@@ -28,6 +97,7 @@ int(*builtin_func[])(char **)={
     &lsh_cd,
     &lsh_help,
     &lsh_exit,
+    &lsh_history
 
 };
 
@@ -38,7 +108,18 @@ int lsh_cd(char **args);
 int lsh_help(char **args);
 int lsh_exit(char **args);
 int lsh_history(char **args);
-int lsh_export(char **args);
+
+
+int lsh_history(char **args) {
+    (void)args;  // unused
+
+    for (int i = 0; i < history_count; i++) {
+        printf("%d  %s\n", i + 1, history[i]);
+    }
+    return 1;   //To keep shell running
+}
+
+
 
 
 int lsh_launch(char **args) {
@@ -56,9 +137,6 @@ int lsh_launch(char **args) {
         }
         
     }
-
-
-
 
     char **cmd1 = args;
     char **cmd2 = NULL;
@@ -378,6 +456,7 @@ void lsh_loop(){
         fflush(stdout);
         //It will store the raw input from the user.
         line=lsh_read_line();
+        add_history(line);
 
      
 
