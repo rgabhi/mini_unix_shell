@@ -107,7 +107,7 @@ int launch(char **args) {
 
 
 // commit 1
-char **tokenize(char *line){
+char **tokenize_input(char *line){
    int bufsize = TOKEN_BUFF_SZ;
    int position = 0;
    // allocate buffer
