@@ -17,20 +17,8 @@
 int launch(char **args) {
    pid_t pid;
    int status;
-   int is_background = 0;
-
-
-   // 1. Check if the last argument is '&'
-   int i;
-   for (i = 0; args[i] != NULL; i++) {
-       // Just finding the end...
-   }
-   // 'i' is now the count of arguments. Check the last one (i-1).
-   if (i > 0 && strcmp(args[i-1], "&") == 0) {
-       is_background = 1;
-       args[i-1] = NULL; // Remove '&' from the list
-   }
-
+   
+   int is_background=check_background(args);
 
    pid = fork();
    if (pid == 0) {
@@ -211,6 +199,9 @@ int execute(char **args){
    if(strcmp(args[0], "exit") == 0){
        return apsh_exit(args);
    }
+   if(strcmp(args[0], "export") == 0){
+       return apsh_export(args);
+   }
    // if not a built-in, run as external process
    return launch(args);
 }
@@ -248,6 +239,9 @@ int main(){
         char cwd[1024];
         getcwd(cwd, sizeof(cwd));
         printf("\033[1;34m%s\033[0m \033[1;32mAP_SHELL\033[0m\033[1;36m >> \033[0m", cwd);
+
+        //added by me
+        // fflush(stdout);
 
         // 2. read line from stdin
         read = getline(&line, &len, stdin);

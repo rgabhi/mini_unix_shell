@@ -6,6 +6,10 @@
 #include "apsh_module.h"
 
 void execute_pipeline(char **left_args, char **right_args){
+
+    int is_left_background=check_background(left_args);
+    int is_right_background=check_background(right_args);
+
     int pfd[2];
     pid_t p1, p2;
     if (pipe(pfd) < 0){
@@ -35,4 +39,14 @@ void execute_pipeline(char **left_args, char **right_args){
             exit(EXIT_FAILURE);
         }
     }
+
+    //added by me   -------------- >>
+
+    close(pfd[0]);
+    close(pfd[1]);
+    if(!is_left_background)
+    waitpid(p1, NULL, 0);
+    if(!is_right_background)
+    waitpid(p2, NULL, 0);
+
 }
