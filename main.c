@@ -64,7 +64,7 @@ int main(){
         read = getline(&line, &len, stdin);
 
         // 3. get args
-        args = split_line(line);
+        args = tokenize_input(line);
         if(args[0] != NULL){
             status = launch(args);
         }
