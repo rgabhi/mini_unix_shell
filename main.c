@@ -120,18 +120,19 @@ char **tokenize_input(char *line){
 
 
        // handle quoted strings
-       if(*p == '"'){
+       if(*p == '"' || *p == '\''){
+        char quote = *p;
            p++; // skip opening quote
            tokens[position] = p;
            position++;
           
            // scan closing quote
-           while(*p && *p != '"'){
+           while(*p && *p != quote){
                p++;
            }
 
 
-           if(*p == '"'){
+           if(*p == quote){
                *p = '\0'; //terminate token
                p++;
            }
