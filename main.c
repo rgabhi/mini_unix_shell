@@ -17,14 +17,14 @@ int launch(char **args){
         // child process
         if(execvp(args[0], args) == -1){
             //print error if cmd not found
-            perror("lsh");
+            perror("apsh");
         }
         // kill child if exec fails
         exit(EXIT_FAILURE);
     }
     else if(pid < 0){
         // error forking
-        perror("lsh");
+        perror("apsh");
     }
     else{
         wpid = waitpid(pid, &status, WUNTRACED);
@@ -44,7 +44,7 @@ char **tokenize_input(char *line){
     
     if(!tokens){
         // write to file stream
-        fprintf(stderr, "lsh : allocation error\n");
+        fprintf(stderr, "apsh : allocation error\n");
         exit(EXIT_FAILURE);
     }
 
@@ -59,7 +59,7 @@ char **tokenize_input(char *line){
             bufsize += TOKEN_BUFF_SZ;
             tokens = realloc(tokens, bufsize * sizeof(char*));
             if(!tokens){
-                fprintf(stderr, "lsh: allocation error\n");
+                fprintf(stderr, "apsh: allocation error\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -75,6 +75,33 @@ char **tokenize_input(char *line){
 
 }
 
+
+int execute(char **args){
+   if(args[0] == NULL){
+       // empty command
+       return 1;
+   }
+   // check pipeline |
+   for(int i = 0; args[i] != NULL; i++){
+       if(strcmp(args[i], "|") == 0){
+           args[i] = NULL; // split
+           execute_pipeline(args, &args[i + 1]);
+           return 1;
+       }
+   }
+
+
+   if(strcmp(args[0], "cd") == 0){
+       return apsh_cd(args);
+   }
+   if(strcmp(args[0], "exit") == 0){
+       return apsh_exit(args);
+   }
+   // if not a built-in, run as external process
+   return launch(args);
+}
+
+
 int main(){
     // ptr to line buffer 
     char *line = NULL;
@@ -87,7 +114,7 @@ int main(){
 
     while(status){
         // 1.
-        printf("ag_mini_shell> ");
+        printf("||AP_SHELL||>>> ");
 
         // 2. read line from stdin
         read = getline(&line, &len, stdin);
@@ -95,7 +122,7 @@ int main(){
         // 3. get args
         args = tokenize_input(line);
         if(args[0] != NULL){
-            status = launch(args);
+            status = execute(args);
         }
         free(args);
     }
