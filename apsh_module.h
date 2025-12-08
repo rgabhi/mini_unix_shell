@@ -7,7 +7,8 @@
     void handle_sigchld(int sig);
     int apsh_exit(char **args);
     void execute_pipeline(char **left_args, char **right_args);
-
+    int apsh_export(char **args);
+    int check_background(char ** args);
     // struct def
     
     #endif 
