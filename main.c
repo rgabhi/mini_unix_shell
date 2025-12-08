@@ -210,6 +210,52 @@ int execute(char **args, LRUCache *cache){
    return launch(args);
 }
 
+int find_and_and(char **args) {
+    if (!args) return -1;
+    for (int i = 0; args[i] != NULL; i++) {
+        if (strcmp(args[i], "&&") == 0) {
+            return i;   // index of &&
+        }
+    }
+    return -1;  // not found
+}
+
+int apsh_execute_with_and(char **args, LRUCache *cache) {
+    int idx = find_and_and(args);
+
+    if (idx == -1) {
+        // No && → just run normally
+         return execute(args, cache);
+       
+    }
+
+    // We have: cmd1 && cmd2
+    // args looks like: [cmd1, ..., "&&", cmd2, ..., NULL]
+
+    // Split into two NULL-terminated command arrays
+    args[idx] = NULL;              // terminate first command
+    char **args1 = args;           // left side
+    char **args2 = &args[idx + 1]; // right side begins after "&&"
+
+    // printf("-=--------> %s",args2[0]);
+
+    // 1) Run first command
+    int status1 = execute(args1, cache);
+
+    // IMPORTANT: status1 here should be the *exit code* of the command.
+    // Make sure apsh_execute_single returns WEXITSTATUS of the child.
+
+    if (status1 == 1) {
+        // success → run second command
+          return apsh_execute_with_and(args2, cache);
+         
+    } else {
+        // failure → do NOT run second command
+        return status1;
+    }
+}
+
+
 
 
 int main(){
@@ -242,9 +288,8 @@ int main(){
     while(status){
         // 1.
         // printf("||AP_SHELL||>> ");
-        char cwd[1024];
-        getcwd(cwd, sizeof(cwd));
-        printf("\033[1;34m%s\033[0m \033[1;32mAP_SHELL\033[0m\033[1;36m >> \033[0m", cwd);
+        add_prompt();
+        
 
         //added by me
         // fflush(stdout);
@@ -271,7 +316,7 @@ int main(){
         // 3. get args
         args = tokenize_input(line);
         if(args[0] != NULL){
-            status = execute(args, lru_cache);
+            status = apsh_execute_with_and(args, lru_cache);
         }
         free(args);
     }
