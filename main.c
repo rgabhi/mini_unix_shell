@@ -6,6 +6,7 @@
 #include <sys/wait.h> //waitpid
 #include<fcntl.h>   // for open(),O_CREAT ,etc.....
 #include<signal.h> // for signal, SIGINT
+#include<errno.h>  // for cmd not found
 
 #include "apsh_module.h"
 
@@ -64,7 +65,13 @@ int launch(char **args) {
 
 
        if (execvp(args[0], args) == -1) {
-           perror("apsh");
+            if(errno == ENOENT){
+               fprintf(stderr, "apsh: command not found: %s\n", args[0]);
+            }
+            else{
+               perror("apsh");
+            }
+
        }
        exit(EXIT_FAILURE);
       
