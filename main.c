@@ -122,7 +122,7 @@ char **tokenize_input(char *line){
 
 
    //2. get first token
-   while(*p != NULL){
+   while(*p){
 
 
        // 1. skip leading white space
@@ -159,7 +159,7 @@ char **tokenize_input(char *line){
                p++;
            }
            // if space terminate token
-           if(*p != NULL){
+           if(*p){
                *p = '\0';
                p++;
            }
@@ -230,9 +230,24 @@ int main(){
     signal(SIGINT, handle_sigint);
     signal(SIGCHLD, handle_sigchld); // Handle Zombies (Background processes)
 
+    printf(
+    "\033[1;31m"  // Red skull
+    "      .----.   @   @\n"
+    "     / .-\"-.`.  \\v/\n"
+    "     | | '\\ \\ \\_/ )\n"
+    "   ,-' \\ `-.' /  /\n"
+    "  '---`----'----'\n"
+    "\033[0m"
+    "\n\033[1;32m        AP_SHELL\033[0m\n\n"  // Green AP_SHELL centered
+    );
+
+
     while(status){
         // 1.
-        printf("||AP_SHELL||>> ");
+        // printf("||AP_SHELL||>> ");
+        char cwd[1024];
+        getcwd(cwd, sizeof(cwd));
+        printf("\033[1;34m%s\033[0m \033[1;32mAP_SHELL\033[0m\033[1;36m >> \033[0m", cwd);
 
         // 2. read line from stdin
         read = getline(&line, &len, stdin);
