@@ -88,6 +88,11 @@ int launch(char **args) {
            do {
                waitpid(pid, &status, WUNTRACED);
            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+           // If the child exited normally but with a non-zero status (failure)
+           if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+               return 2; // Return 2 to signal command failure (but keep shell loop alive)
+           }
        }
    }
 
